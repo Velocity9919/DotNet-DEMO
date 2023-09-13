@@ -2,7 +2,6 @@ pipeline {
     agent any
     
     tools{
-        
         jdk 'jdk17'
     }
     
@@ -14,13 +13,13 @@ pipeline {
     stages {
         stage('Git Checkout ') {
             steps {
-                git 'https://github.com/jaiswaladi246/DotNet-DEMO.git'
+                git branch: 'master', url: 'https://github.com/Velocity9919/DotNet-DEMO.git'
             }
         }
         
         stage('OWASP Dependency Check') {
             steps {
-                dependencyCheck additionalArguments: ' --scan ./ ', odcInstallation: 'DC'
+                dependencyCheck additionalArguments: ' --scan ./ ', odcInstallation: 'DP-Check'
                     dependencyCheckPublisher pattern: '**/dependency-check-report.xml'
             }
         }
@@ -34,7 +33,7 @@ pipeline {
         stage('Sonarqube Analysis') {
             steps {
                 
-                withSonarQubeEnv('sonar'){
+                withSonarQubeEnv('sonar-server'){
                   sh ''' $SCANNER_HOME/bin/sonar-scanner -Dsonar.projectName=dotnet-demo \
                     -Dsonar.projectKey=dotnet-demo ''' 
                }
@@ -46,7 +45,7 @@ pipeline {
         stage('Docker Build & Tag') {
             steps {
                 script{
-                    withDockerRegistry(credentialsId: 'docker-cred') {
+                    withDockerRegistry(credentialsId: 'dockerhub-cred') {
                         sh "make image"
                     }
                 }
@@ -56,7 +55,7 @@ pipeline {
         stage('Docker Push') {
             steps {
                 script{
-                    withDockerRegistry(credentialsId: 'docker-cred') {
+                    withDockerRegistry(credentialsId: 'dockerhub-cred') {
                         sh "make push"
                     }
                 }
@@ -65,10 +64,8 @@ pipeline {
         
         stage('Docker Deploy') {
             steps {
-                sh "docker run -d -p 5000:5000 adijaiswal/dotnet-demoapp"
+                sh "docker run -d -p 5000:5000 nareshbabu1991/dotnet-demoapp"
             }
-        }
-        
-        
+        } 
     }
 }
